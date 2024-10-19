@@ -1,15 +1,18 @@
 import argparse
+import subprocess
 from pathlib import Path
 
+# we know some glyphs are missing, suppress warnings
+import reportlab.rl_config
 import wikipedia
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
-# we know some glyphs are missing, suppress warnings
-import reportlab.rl_config
+
 reportlab.rl_config.warnOnMissingFontGlyphs = 0
 
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -24,10 +27,18 @@ def main():
     args = parser.parse_args()
 
     page = get_random_page()
-
     pdf = Path(args.output)
+
+    create_pdf(pdf, page, args.image)
+
+    # Print page
+    subprocess.run(["lp", pdf])
+
+
+def create_pdf(pdf, page, image):
     c = canvas.Canvas(f"{pdf}", pagesize=A4)
-    pdfmetrics.registerFont(TTFont('DejaVu Serif', 'DejaVuSerif.ttf'))
+    pdfmetrics.registerFont(TTFont("DejaVu Serif", "DejaVuSerif.ttf"))
+
     start_pos_x = 50
     start_pos_y = 780
     pos_y = start_pos_y
@@ -42,11 +53,11 @@ def main():
         c.drawString(start_pos_x, pos_y, line)
         pos_y -= 20
 
-    if args.image:
+    if image:
         pos_y -= 200
-        image = Path(args.image)
-        if image.exists() and image.is_file():
-            c.drawImage(image, start_pos_x + 100, pos_y, width=200, height=100)
+        image_path = Path(image)
+        if image_path.exists() and image_path.is_file():
+            c.drawImage(image_path, start_pos_x + 100, pos_y, width=200, height=100)
 
     c.showPage()
     c.save()
